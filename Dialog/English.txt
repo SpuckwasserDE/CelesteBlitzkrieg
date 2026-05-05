@@ -1,0 +1,3 @@
+SpuckGD_Blitzkrieg_SettingsHeader_Toggles= Mod Toggles
+SpuckGD_Blitzkrieg_SettingsHeader_Overlay= Text Overlay
+SpuckGD_Blitzkrieg_SettingsHeader_Actions= Blitzkrieg Actions
