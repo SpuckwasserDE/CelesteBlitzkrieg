@@ -3,6 +3,8 @@ using Microsoft.Xna.Framework;
 using Monocle;
 using Celeste.Mod.Blitzkrieg.Entities;
 using static Celeste.Session;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Celeste.Mod.Blitzkrieg;
 
@@ -61,85 +63,6 @@ public class BlitzkriegModule : EverestModule {
 
     private void LevelUpdate(Level level)
     {
-        /*if (level.Tracker.GetEntity<Player>() != null)
-        {
-            if (Settings.StartRecordingPath.Pressed)
-            {
-                RecordPath(level);
-            }
-            else if (Settings.SavePath.Pressed)
-            {
-                SavePath();
-            }
-            else if (isRecording)
-            {
-                if (Settings.PlaceCheckpoint.Pressed)
-                {
-                    PlaceCheckpoint(level);
-                }
-                else if (Settings.DeleteCheckpoint.Pressed && SaveData.respawnPointsPath.Count > 0)
-                {   
-                    DeleteCheckpoint();
-                }
-            }
-            else if (!isRecording && SaveData.respawnPointsPath.Count > 0 && level.Session.Area == SaveData.blitzkriegLevel)
-            {
-                if (Settings.RecommendedCheckpoint.Pressed)
-                {
-                    currentRespawnPointIndex = GetRecommendedRunStartIndex();
-                    GoToCheckpoint(currentRespawnPointIndex, level);
-                }
-                else if (Settings.PreviousCheckpoint.Pressed)
-                {
-                    GoToPreviousCheckpoint(level);
-                }
-                else if (Settings.NextCheckpoint.Pressed)
-                {
-                    GoToNextCheckpoint(level);
-                }
-                else if (currentRespawnPointIndex + currentRunProgressIndex + 1 <= SaveData.respawnPointsPath.Count - 1 && Settings.UseBlitzkrieg)
-                {
-                    if (level.Session.RespawnPoint == SaveData.respawnPointsPath[currentRespawnPointIndex + currentRunProgressIndex + 1])
-                    {
-                        currentRunProgressIndex++;
-                    }
-                }
-            }
-        }
-
-        if (Settings.EnableTextOverlay && SaveData.respawnPointsPath.Count > 0 && level.Session.Area == SaveData.blitzkriegLevel)
-        {
-            if (textOverlay == null)
-            {
-                textOverlay = new BlitzkriegTextOverlay(new Vector2(5, 125), "", Settings.TextSize, Dialog.Language.Font);
-                level.Add(textOverlay);
-            }
-
-            if (isRecording)
-            {
-                textOverlay.SetText(textOverlay.GetRecordingText(SaveData.roomNamesPath, level.Session.Level));
-            }
-            else
-            {
-                int startIndex = GetRecommendedRunStartIndex();
-                string endRoomName = "End";
-                int endIndex = SaveData.respawnPointsPath.Count - 1;
-                if (startIndex + SaveData.blitzkriegStage < SaveData.roomNamesPath.Count)
-                {
-                    endRoomName = SaveData.roomNamesPath[startIndex + SaveData.blitzkriegStage];
-                    endIndex = startIndex + SaveData.blitzkriegStage;
-                }
-
-                textOverlay.SetText(textOverlay.GetRecommendedText(level.Session.Level, SaveData.roomNamesPath[startIndex], endRoomName,
-                    SaveData.respawnPointsPath.Count, startIndex + 1, endIndex + 1, currentRespawnPointIndex + currentRunProgressIndex + 1, SaveData.blitzkriegStage, currentRunProgressIndex));
-            }            
-        }
-        else if ((!Settings.EnableTextOverlay || !Settings.UseBlitzkrieg) && textOverlay != null)
-        {
-            level.Remove(textOverlay);
-            textOverlay = null;
-        }*/
-
         if (currentProfileIndex >= 0)
         {
             BlitzkriegProfile profile = SaveData.blitzkriegProfiles[currentProfileIndex];
@@ -240,7 +163,7 @@ public class BlitzkriegModule : EverestModule {
                 }
             }
 
-            if (Settings.UseBlitzkrieg && Settings.EnableTextOverlay && level.Session.Area == profile.blitzkriegLevel)
+            if (Settings.EnableTextOverlay && level.Session.Area == profile.blitzkriegLevel)
             {
                 if (textOverlay == null)
                 {
@@ -252,7 +175,7 @@ public class BlitzkriegModule : EverestModule {
                 {
                     textOverlay.SetText(textOverlay.GetRecordingText(profile.roomNamesPath, level.Session.Level));
                 }
-                else if (profile.respawnPointsPath.Count > 0)
+                else if (profile.respawnPointsPath.Count > 0 && Settings.UseBlitzkrieg)
                 {
                     int startIndex = GetRecommendedRunStartIndex();
                     string endRoomName = "End";
@@ -326,18 +249,6 @@ public class BlitzkriegModule : EverestModule {
                 currentRunProgressIndex = 0;
             }
         }
-
-        
-        /*if (Settings.UseBlitzkrieg && !isRecording && SaveData.respawnPointsPath.Count > 0 && player.level.Session.Area == SaveData.blitzkriegLevel)
-        {
-            CheckRunComplete();
-            if (!player.level.Session.GrabbedGolden)
-            {
-                player.level.Session.Level = SaveData.roomNamesPath[currentRespawnPointIndex];
-                player.level.Session.RespawnPoint = SaveData.respawnPointsPath[currentRespawnPointIndex];
-                Engine.Scene = new LevelLoader(player.level.Session, Vector2.Zero);
-            }
-        }*/
     }
 
     private void LevelOnExit(Level level, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow)
@@ -351,18 +262,14 @@ public class BlitzkriegModule : EverestModule {
                 Logger.Log(LogLevel.Info, nameof(BlitzkriegModule), "Stopped recording path due to level exit.");
             }
             currentRunProgressIndex = 0;
+            currentRespawnPointIndex = 0;
+            coreLockRoom = "";
         }
-
-
-        /*if (isRecording)
+        if (textOverlay != null && Settings.EnableTextOverlay)
         {
-            SaveData.blitzkriegLevel = AreaKey.Default;
-            SaveData.respawnPointsPath.Clear();
-            SaveData.roomNamesPath.Clear();
-            isRecording = false;
-            Logger.Log(LogLevel.Info, nameof(BlitzkriegModule), "Stopped recording path due to level exit.");
+            textOverlay.RemoveSelf();
+            textOverlay = null;
         }
-        currentRespawnPointIndex = 0;*/
     }
 
     private void LevelOnComplete(Level level)
@@ -377,14 +284,6 @@ public class BlitzkriegModule : EverestModule {
                 CheckRunComplete();
             }
         }
-
-
-        /*if (Settings.UseBlitzkrieg && !isRecording && level.Session.Area == SaveData.blitzkriegLevel &&
-            currentRespawnPointIndex + currentRunProgressIndex == SaveData.respawnPointsPath.Count - 1)
-        {
-            currentRunProgressIndex++;
-            CheckRunComplete();
-        }        */
     }
 
     private void PlayerOnRespawn(Player player)
@@ -392,11 +291,14 @@ public class BlitzkriegModule : EverestModule {
         if (currentProfileIndex >= 0)
         {
             BlitzkriegProfile profile = SaveData.blitzkriegProfiles[currentProfileIndex];
-            if (Settings.UseBlitzkrieg && profile.respawnPointsPath.Count > 0 && player.level.Session.Area == profile.blitzkriegLevel)
+            if (Settings.EnableRespawnSwitcher && profile.respawnPointsPath.Count > 0 && player.level.Session.Area == profile.blitzkriegLevel)
             {
                 if (Settings.EnableTextOverlay && textOverlay != null)
                 {
-                    player.level.Add(textOverlay);
+                    if (textOverlay.Scene != player.level)
+                    {
+                        player.level.Add(textOverlay);
+                    }  
                 }
                 if (!isRecording)
                 {
@@ -406,26 +308,9 @@ public class BlitzkriegModule : EverestModule {
                     {
                         player.level.CoreMode = coreLockMode;
                     }
-                } 
-            }
-        }
-
-
-        /*if (Settings.UseBlitzkrieg && SaveData.respawnPointsPath.Count > 0 && player.level.Session.Area == SaveData.blitzkriegLevel)
-        {
-            if (Settings.EnableTextOverlay && textOverlay != null)
-            {
-                player.level.Add(textOverlay);
-            }
-            if (!isRecording)
-            {
-                currentRunProgressIndex = 0;
-                if (SaveData.roomNamesPath[currentRespawnPointIndex] != player.level.Session.Level)
-                {
-                    currentRespawnPointIndex = SaveData.roomNamesPath.IndexOf(player.level.Session.Level);
-                }
+                }                 
             }            
-        }      */
+        }
     }
 
     private void OnSliderChanged(Session session, Session.Slider slider, float? previous)
@@ -445,17 +330,16 @@ public class BlitzkriegModule : EverestModule {
             {
                 textOverlay.Update(new Vector2(5, 125), "", Settings.TextSize, Dialog.Language.Font);
             }
-        }        
-
-
-        /*if (Settings.UseBlitzkrieg && Settings.EnableTextOverlay && textOverlay != null && session.Area == SaveData.blitzkriegLevel)
-        {
-            textOverlay.Update(new Vector2(5, 125), "", Settings.TextSize, Dialog.Language.Font);
-        }*/
+        }  
     }
 
     private void LevelOnEnter(Session session, bool fromSavedata)
     {
+        if (textOverlay != null)
+        {
+            textOverlay.RemoveSelf();
+            textOverlay = null;
+        }        
         reloadOverlay = true;             
     }
 
@@ -474,15 +358,13 @@ public class BlitzkriegModule : EverestModule {
         profile.blitzkriegLevel = level.Session.Area;
         profile.respawnPointsPath.Clear();
         profile.roomNamesPath.Clear();
+        profile.comletedRunsHistory.Clear();
+        profile.runBacklog.Clear();
         SaveData.blitzkriegProfiles.Add(profile);
         currentProfileIndex = SaveData.blitzkriegProfiles.Count - 1;
 
         UpdateTextOverlay(level);
 
-
-        /*SaveData.blitzkriegLevel = level.Session.Area;
-        SaveData.respawnPointsPath.Clear();
-        SaveData.roomNamesPath.Clear();*/
         isRecording = true;
         PlaceCheckpoint(level);
         Logger.Log(LogLevel.Verbose, nameof(BlitzkriegModule), "Started recording path.");
@@ -497,15 +379,14 @@ public class BlitzkriegModule : EverestModule {
             currentRespawnPointIndex = profile.respawnPointsPath.Count - 1;
             profile.blitzkriegStage = 1;
             SetupRunsCompleted();
+
+            if (!Settings.UseBlitzkrieg && textOverlay != null)
+            {
+                textOverlay.RemoveSelf();
+                textOverlay = null;
+            }
             Logger.Log(LogLevel.Verbose, nameof(BlitzkriegModule), $"Saved path ({profile.runsCompleted.Count} checkpoints).");
         }
-
-
-        /*isRecording = false;
-        currentRespawnPointIndex = SaveData.respawnPointsPath.Count - 1;
-        SaveData.blitzkriegStage = 1;
-        SetupRunsCompleted();
-        Logger.Log(LogLevel.Verbose, nameof(BlitzkriegModule), $"Saved path ({SaveData.runsCompleted.Count} checkpoints).");*/
     }
 
     private static void PlaceCheckpoint(Level level)
@@ -523,19 +404,7 @@ public class BlitzkriegModule : EverestModule {
             }
             profile.respawnPointsPath.Add((Vector2)level.Session.RespawnPoint);
             profile.roomNamesPath.Add(level.Session.Level);
-        }        
-
-
-        /*if (SaveData.respawnPointsPath.Count >= 1)
-        {
-            if (SaveData.respawnPointsPath[SaveData.respawnPointsPath.Count - 1] == level.Session.RespawnPoint)
-            {
-                Logger.Log(LogLevel.Verbose, nameof(BlitzkriegModule), "Current respawn point is the same as the last checkpoint. Not placing a new checkpoint.");
-                return;
-            }
-        }
-        SaveData.respawnPointsPath.Add((Vector2)level.Session.RespawnPoint);
-        SaveData.roomNamesPath.Add(level.Session.Level);     */   
+        } 
     }
 
     private static void DeleteCheckpoint()
@@ -548,14 +417,7 @@ public class BlitzkriegModule : EverestModule {
                 profile.respawnPointsPath.RemoveAt(profile.respawnPointsPath.Count - 1);
                 profile.roomNamesPath.RemoveAt(profile.roomNamesPath.Count - 1);
             }
-        }        
-
-
-        /*if (SaveData.respawnPointsPath.Count >= 1)
-        {
-            SaveData.respawnPointsPath.RemoveAt(SaveData.respawnPointsPath.Count - 1);
-            SaveData.roomNamesPath.RemoveAt(SaveData.roomNamesPath.Count - 1);
-        }   */     
+        }          
     }
 
     private static void GoToCheckpoint(int index, Level level)
@@ -572,29 +434,13 @@ public class BlitzkriegModule : EverestModule {
             {      
                 Player player = level.Tracker.GetEntity<Player>();
                 Vector2 respawnPoint = profile.respawnPointsPath[index];
-
+                
                 level.Session.Level = profile.roomNamesPath[index];
                 level.Session.RespawnPoint = respawnPoint;
-                Engine.Scene = new LevelLoader(player.level.Session, Vector2.Zero);
+                Engine.Scene = new LevelLoader(player.level.Session, Vector2.Zero);                
+                level.Reload();
             }
         }
-        
-
-
-        /*if (index < 0 || index >= SaveData.respawnPointsPath.Count)
-        {
-            Logger.Log(LogLevel.Warn, nameof(BlitzkriegModule), $"Respawn point index {index} is out of bounds.");
-            return;
-        }
-        else if (!level.Session.GrabbedGolden)
-        {      
-            Player player = level.Tracker.GetEntity<Player>();
-            Vector2 respawnPoint = SaveData.respawnPointsPath[index];
-
-            level.Session.Level = SaveData.roomNamesPath[index];
-            level.Session.RespawnPoint = respawnPoint;
-            Engine.Scene = new LevelLoader(player.level.Session, Vector2.Zero);
-        }*/
     }
 
     private static void GoToPreviousCheckpoint(Level level)
@@ -610,18 +456,7 @@ public class BlitzkriegModule : EverestModule {
                 currentRespawnPointIndex = SaveData.blitzkriegProfiles[currentProfileIndex].respawnPointsPath.Count - 1;
             }
             GoToCheckpoint(currentRespawnPointIndex, level);
-        }        
-
-
-        /*if (currentRespawnPointIndex > 0)
-        {
-            currentRespawnPointIndex--;
-        }
-        else
-        {
-            currentRespawnPointIndex = SaveData.respawnPointsPath.Count - 1;
-        }
-        GoToCheckpoint(currentRespawnPointIndex, level);*/
+        }  
     }
 
     private static void GoToNextCheckpoint(Level level)
@@ -637,18 +472,7 @@ public class BlitzkriegModule : EverestModule {
                 currentRespawnPointIndex = 0;
             }
             GoToCheckpoint(currentRespawnPointIndex, level);
-        }        
-
-
-        /*if (currentRespawnPointIndex < SaveData.respawnPointsPath.Count - 1)
-        {
-            currentRespawnPointIndex++;
-        }
-        else
-        {
-            currentRespawnPointIndex = 0;
-        }
-        GoToCheckpoint(currentRespawnPointIndex, level);*/
+        }  
     }
 
     private static void CheckRunComplete()
@@ -658,7 +482,25 @@ public class BlitzkriegModule : EverestModule {
             BlitzkriegProfile profile = SaveData.blitzkriegProfiles[currentProfileIndex];
             if (currentRunProgressIndex >= profile.blitzkriegStage)
             {
-                profile.runsCompleted[currentRespawnPointIndex] = true;
+                bool runIsBacklogged = false;
+                int backloggedRun = 0;
+                for (int i = 0; i < profile.runBacklog.Count; i++)
+                {
+                    if (profile.runBacklog[i] == currentRespawnPointIndex)
+                    {
+                        runIsBacklogged = true;
+                        backloggedRun = i;
+                    }
+                }
+                if (runIsBacklogged)
+                {
+                    profile.runBacklog.RemoveAt(backloggedRun);
+                }
+                else
+                {
+                    profile.runsCompleted[currentRespawnPointIndex] = true;
+                }                
+                profile.comletedRunsHistory.Add(currentRespawnPointIndex);
                 currentRunProgressIndex = 0;
 
                 bool allRunsCompleted = true;
@@ -671,39 +513,27 @@ public class BlitzkriegModule : EverestModule {
                     }
                 }
 
-                if (allRunsCompleted && profile.blitzkriegStage < profile.respawnPointsPath.Count)
+                if (allRunsCompleted)
                 {
-                    profile.blitzkriegStage++;
-                    SetupRunsCompleted();
+                    if (profile.runBacklog.Count > 0)
+                    {
+                        foreach (int run in profile.runBacklog)
+                        {
+                            profile.runsCompleted[run] = false;
+                        }
+                        profile.runBacklog.Clear();
+                    }
+                    else if (profile.blitzkriegStage < profile.respawnPointsPath.Count)
+                    {                        
+                        profile.blitzkriegStage++;
+                        SetupRunsCompleted();
+                    }
                 }
             }
-        }        
-
-
-        /*if (currentRunProgressIndex >= SaveData.blitzkriegStage)
-        {
-            SaveData.runsCompleted[currentRespawnPointIndex] = true;
-            currentRunProgressIndex = 0;
-
-            bool allRunsCompleted = true;
-            foreach (bool runCompleted in SaveData.runsCompleted)
-            {
-                if (!runCompleted)
-                {
-                    allRunsCompleted = false;
-                    break;
-                }
-            }
-
-            if (allRunsCompleted && SaveData.blitzkriegStage < SaveData.respawnPointsPath.Count)
-            {
-                SaveData.blitzkriegStage++;
-                SetupRunsCompleted();
-            }
-        }*/
+        }
     }
 
-    private static void SetupRunsCompleted()
+    public static void SetupRunsCompleted()
     {
         if (currentProfileIndex >= 0)
         {
@@ -713,17 +543,10 @@ public class BlitzkriegModule : EverestModule {
             {
                 profile.runsCompleted.Add(false);
             }
-        }        
-
-
-        /*SaveData.runsCompleted.Clear();
-        for (int i = 0; i < SaveData.respawnPointsPath.Count - SaveData.blitzkriegStage + 1; i++)
-        {
-            SaveData.runsCompleted.Add(false);
-        }*/
+        } 
     }
 
-    private static int GetRecommendedRunStartIndex()
+    public static int GetRecommendedRunStartIndex()
     {
         if (currentProfileIndex >= 0)
         {
@@ -737,16 +560,6 @@ public class BlitzkriegModule : EverestModule {
             }
         }
         return 0;
-
-
-        /*for (int i = SaveData.runsCompleted.Count - 1; i > 0; i--)
-        {
-            if (!SaveData.runsCompleted[i])
-            {
-                return i;
-            }
-        }        
-        return 0;*/
     }
 
     private static BlitzkriegProfile GetProfile(AreaKey area)
@@ -769,7 +582,10 @@ public class BlitzkriegModule : EverestModule {
             {
                 //level.Remove(textOverlay);
                 textOverlay.Update(new Vector2(5, 125), "", Settings.TextSize, Dialog.Language.Font);
-                level.Add(textOverlay);
+                if (textOverlay.Scene != level)
+                {
+                    level.Add(textOverlay);
+                }                
             }
         }        
     }
@@ -780,7 +596,10 @@ public class BlitzkriegModule : EverestModule {
         {
             SaveData.blitzkriegProfiles.Remove(SaveData.blitzkriegProfiles[currentProfileIndex]);
             currentProfileIndex = -1;
-            textOverlay.RemoveSelf();
+            if (textOverlay != null)
+            {
+                textOverlay.RemoveSelf();
+            }            
         }
     }
 
@@ -797,6 +616,109 @@ public class BlitzkriegModule : EverestModule {
             level.CoreMode = CoreModes.Hot;
             coreLockRoom = level.Session.Level;
             coreLockMode = CoreModes.Hot;
+        }
+    }
+
+    public static void UncompleteRun(int run)
+    {
+        if (Settings.UseBlitzkrieg && currentProfileIndex >= 0 && !isRecording)
+        {
+            BlitzkriegProfile profile = SaveData.blitzkriegProfiles[currentProfileIndex];
+            bool thisStage = false;
+            for (int i = 0; i < profile.runsCompleted.Count; i++)    
+            {
+                if (profile.runsCompleted[i] && !profile.runBacklog.Contains(i))
+                {
+                    thisStage = true;
+                }
+            }
+
+            if (thisStage && run < profile.runsCompleted.Count)
+            {
+                profile.runsCompleted[run] = false;                
+            }
+            else
+            {
+                profile.blitzkriegStage--;
+                profile.runsCompleted.Clear();
+                for (int i = 0; i < profile.respawnPointsPath.Count - profile.blitzkriegStage + 1; i++)
+                {
+                    profile.runsCompleted.Add(i != run);
+                }
+            }
+        }
+    }
+
+    public static void SwitchRecommendedRun()
+    {
+        if (Settings.UseBlitzkrieg && currentProfileIndex >= 0 && !isRecording)
+        {
+            BlitzkriegProfile profile = SaveData.blitzkriegProfiles[currentProfileIndex];
+            int run = GetRecommendedRunStartIndex();
+            if (!profile.runsCompleted[run])
+            {                
+                profile.runsCompleted[run] = true;
+                profile.runBacklog.Add(run);
+                CheckRunComplete();
+            }
+        }
+    }
+
+    public static void CompleteStage()
+    {
+        if (Settings.UseBlitzkrieg && currentProfileIndex >= 0 && !isRecording)
+        {
+            BlitzkriegProfile profile = SaveData.blitzkriegProfiles[currentProfileIndex];
+            if (profile.blitzkriegStage < profile.respawnPointsPath.Count)
+            {
+                profile.blitzkriegStage++;
+                for (int i = 0; i < profile.runsCompleted.Count; i++)
+                {
+                    if (!profile.runsCompleted[i])
+                    {
+                        profile.comletedRunsHistory.Add(i);
+                    }
+                }
+                SetupRunsCompleted();
+                profile.runBacklog.Clear();
+            }               
+        }
+    }
+
+    public static void ResetStageProgress()
+    {
+        if (Settings.UseBlitzkrieg && currentProfileIndex >= 0 && !isRecording)
+        {
+            BlitzkriegProfile profile = SaveData.blitzkriegProfiles[currentProfileIndex];            
+            for (int i = profile.comletedRunsHistory.Count - 1; i >= 0; i--)
+            {                
+                bool isInBacklog = false;
+                foreach (int backloggedRun in profile.runBacklog)
+                {
+                    if (backloggedRun == profile.comletedRunsHistory[i])
+                    {
+                        isInBacklog = true;
+                    }
+                }
+                bool allRunsReset = true;
+                for (int j = 0; j < profile.runsCompleted.Count; j++)    
+                {
+                    if (profile.runsCompleted[j] && !profile.runBacklog.Contains(j))
+                    {
+                        allRunsReset = false;
+                    }
+                }
+                if (!allRunsReset)
+                {
+                    if (profile.runsCompleted[profile.comletedRunsHistory[i]] && !isInBacklog)
+                    {
+                        profile.runsCompleted[profile.comletedRunsHistory[i]] = false;
+                        profile.comletedRunsHistory.RemoveAt(i);
+                    }    
+                }                           
+            }          
+            profile.runBacklog.Clear();
+            SetupRunsCompleted();
         }
     }
 

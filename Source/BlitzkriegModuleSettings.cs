@@ -38,6 +38,9 @@ public class BlitzkriegModuleSettings : EverestModuleSettings
     [YamlIgnore]
     public bool StartRecordingDummy { get; set; }
 
+    [SettingSubText("Manage your Progress and switch the Run Recommendation")]
+    public BlitzkriegSettingsSubmenuRunManagement RunManagement { get; set; } = new();
+
     [SettingSubText("This exists to reduce the need for Keybinds on Controller")]
     public BlitzkriegSettingsSubmenuExtraButtons ExtraButtons { get; set; } = new();
 
