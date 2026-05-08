@@ -35,6 +35,9 @@ public class BlitzkriegModuleSettings : EverestModuleSettings
     public bool EnableRespawnSwitcher { get; set; } = true;
     public bool UseBlitzkrieg { get; set; } = true;    
 
+    [SettingSubText("Forces the Death Animation to play")]
+    public bool DisableInstantRespawn { get; set; } = false;
+
     [YamlIgnore]
     public bool StartRecordingDummy { get; set; }
 

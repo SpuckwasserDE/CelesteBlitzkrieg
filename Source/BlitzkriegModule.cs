@@ -5,6 +5,9 @@ using Celeste.Mod.Blitzkrieg.Entities;
 using static Celeste.Session;
 using System.Linq;
 using System.Collections.Generic;
+using Iced.Intel;
+using System.Threading;
+using Microsoft.VisualBasic;
 
 namespace Celeste.Mod.Blitzkrieg;
 
@@ -30,6 +33,7 @@ public class BlitzkriegModule : EverestModule {
     public static bool switchLeft = false;
     public static bool switchRecommended = false;
     public static bool switchCore = false;
+    private static bool delayedRespawn = false;
     private static int roomCheck = -1;
     private static int currentRespawnPointIndex = 0;
     private static int currentRunProgressIndex = 0;
@@ -194,6 +198,10 @@ public class BlitzkriegModule : EverestModule {
                         UpdateTextOverlay(level);
                         reloadOverlay = false;
                     }
+                }
+                else
+                {
+                    textOverlay.SetText("");
                 }            
             }
             else if ((!Settings.EnableTextOverlay || !Settings.UseBlitzkrieg) && textOverlay != null)
@@ -240,11 +248,18 @@ public class BlitzkriegModule : EverestModule {
             if (Settings.UseBlitzkrieg && !isRecording && profile.respawnPointsPath.Count > 0 && player.level.Session.Area == profile.blitzkriegLevel)
             {
                 CheckRunComplete();
-                if (!player.level.Session.GrabbedGolden && Settings.EnableRespawnSwitcher)
+                if (!player.level.Session.GrabbedGolden)
                 {
-                    player.level.Session.Level = profile.roomNamesPath[currentRespawnPointIndex];
-                    player.level.Session.RespawnPoint = profile.respawnPointsPath[currentRespawnPointIndex];
-                    Engine.Scene = new LevelLoader(player.level.Session, Vector2.Zero);
+                    if (!Settings.DisableInstantRespawn)
+                    {
+                        player.level.Session.Level = profile.roomNamesPath[currentRespawnPointIndex];
+                        player.level.Session.RespawnPoint = profile.respawnPointsPath[currentRespawnPointIndex];
+                        Engine.Scene = new LevelLoader(player.level.Session, Vector2.Zero);
+                    }
+                    else
+                    {
+                        delayedRespawn = true;
+                    }
                 }
                 currentRunProgressIndex = 0;
             }
@@ -308,7 +323,15 @@ public class BlitzkriegModule : EverestModule {
                     {
                         player.level.CoreMode = coreLockMode;
                     }
-                }                 
+
+                    if (delayedRespawn)
+                    {
+                        delayedRespawn = false;
+                        player.level.Session.Level = profile.roomNamesPath[currentRespawnPointIndex];
+                        player.level.Session.RespawnPoint = profile.respawnPointsPath[currentRespawnPointIndex];
+                        Engine.Scene = new LevelLoader(player.level.Session, Vector2.Zero);
+                    }
+                }
             }            
         }
     }
@@ -434,11 +457,11 @@ public class BlitzkriegModule : EverestModule {
             {      
                 Player player = level.Tracker.GetEntity<Player>();
                 Vector2 respawnPoint = profile.respawnPointsPath[index];
-                
+
                 level.Session.Level = profile.roomNamesPath[index];
                 level.Session.RespawnPoint = respawnPoint;
                 Engine.Scene = new LevelLoader(player.level.Session, Vector2.Zero);                
-                level.Reload();
+                level.Reload();          
             }
         }
     }
