@@ -27,6 +27,9 @@ public class BlitzkriegModuleSettings : EverestModuleSettings
     [DefaultButtonBinding(buttons: null, keys: new[] {Keys.NumPad6})]
     public ButtonBinding NextCheckpoint { get; set; }
 
+    [DefaultButtonBinding(buttons: null, keys: new[] {Keys.NumPad2})]
+    public ButtonBinding PauseDeathReset { get; set; }
+
     [DefaultButtonBinding(buttons: null, keys: new[] {Keys.NumPad8})]
     public ButtonBinding SwitchCoreMode { get; set; }
 

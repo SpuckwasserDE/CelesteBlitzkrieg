@@ -33,6 +33,7 @@ public class BlitzkriegModule : EverestModule {
     public static bool switchLeft = false;
     public static bool switchRecommended = false;
     public static bool switchCore = false;
+    public static bool pauseDeathReset = false;
     private static bool delayedRespawn = false;
     private static int roomCheck = -1;
     private static int currentRespawnPointIndex = 0;
@@ -126,6 +127,10 @@ public class BlitzkriegModule : EverestModule {
                         SwitchCoreMode(level);
                         switchCore = false;
                     }
+                    else if (Settings.PauseDeathReset.Pressed)
+                    {
+                        pauseDeathReset = !pauseDeathReset;
+                    }
                     else if (currentRespawnPointIndex + currentRunProgressIndex + 1 <= profile.respawnPointsPath.Count - 1 && Settings.UseBlitzkrieg)
                     {
                         if (level.Session.RespawnPoint == profile.respawnPointsPath[currentRespawnPointIndex + currentRunProgressIndex + 1])
@@ -191,7 +196,7 @@ public class BlitzkriegModule : EverestModule {
                     }
 
                     textOverlay.SetText(textOverlay.GetRecommendedText(level.Session.Level, profile.roomNamesPath[startIndex], endRoomName,
-                        profile.respawnPointsPath.Count, startIndex + 1, endIndex + 1, currentRespawnPointIndex + currentRunProgressIndex + 1, profile.blitzkriegStage, currentRunProgressIndex));
+                        profile.respawnPointsPath.Count, startIndex + 1, endIndex + 1, currentRespawnPointIndex + currentRunProgressIndex + 1, profile.blitzkriegStage, currentRunProgressIndex, pauseDeathReset));
 
                     if (reloadOverlay)
                     {
@@ -250,7 +255,7 @@ public class BlitzkriegModule : EverestModule {
                 CheckRunComplete();
                 if (!player.level.Session.GrabbedGolden)
                 {
-                    if (!Settings.DisableInstantRespawn)
+                    if (!Settings.DisableInstantRespawn && !pauseDeathReset)
                     {
                         player.level.Session.Level = profile.roomNamesPath[currentRespawnPointIndex];
                         player.level.Session.RespawnPoint = profile.respawnPointsPath[currentRespawnPointIndex];
@@ -292,11 +297,17 @@ public class BlitzkriegModule : EverestModule {
         if (currentProfileIndex >= 0)
         {
             BlitzkriegProfile profile = SaveData.blitzkriegProfiles[currentProfileIndex];
-            if (Settings.UseBlitzkrieg && !isRecording && level.Session.Area == profile.blitzkriegLevel &&
-                currentRespawnPointIndex + currentRunProgressIndex == profile.respawnPointsPath.Count - 1)
+            if (Settings.UseBlitzkrieg && level.Session.Area == profile.blitzkriegLevel)
             {
-                currentRunProgressIndex++;
-                CheckRunComplete();
+                if (!isRecording && currentRespawnPointIndex + currentRunProgressIndex == profile.respawnPointsPath.Count - 1)
+                {                    
+                    currentRunProgressIndex++;
+                    CheckRunComplete();
+                }
+                else if (isRecording)
+                {
+                    SavePath();
+                }
             }
         }
     }
@@ -324,7 +335,7 @@ public class BlitzkriegModule : EverestModule {
                         player.level.CoreMode = coreLockMode;
                     }
 
-                    if (delayedRespawn)
+                    if (delayedRespawn && !pauseDeathReset)
                     {
                         delayedRespawn = false;
                         player.level.Session.Level = profile.roomNamesPath[currentRespawnPointIndex];

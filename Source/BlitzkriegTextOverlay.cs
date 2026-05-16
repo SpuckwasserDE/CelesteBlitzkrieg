@@ -32,18 +32,23 @@ public class BlitzkriegTextOverlay : Entity {
     }
 
     public string GetRecommendedText(string currentRoomName, string runStartRoomName, string runEndRoomName,
-        int checkpointCount, int runStartIndex, int runEndIndex, int currentRoomIndex, int blitzkriegStage, int runProgress)
+        int checkpointCount, int runStartIndex, int runEndIndex, int currentRoomIndex, int blitzkriegStage, int runProgress, bool paused)
     {
         int runLenght = runEndIndex - runStartIndex;
+        string resetPaused = "";
         if (runEndRoomName == "End")
         {
             runLenght++;
+        }
+        if (paused)
+        {
+            resetPaused = "Death Reset is Paused!";
         }
         return $"Stage:  {blitzkriegStage}/{checkpointCount}\n" +
                $"Current Room:  {currentRoomName}  ({currentRoomIndex}/{checkpointCount})\n" +
                $"Run Start:  {runStartRoomName}  ({runStartIndex}/{checkpointCount})\n" +
                $"Run End:  {runEndRoomName}  ({runEndIndex}/{checkpointCount})\n" +
-               $"Run Progress:  {runProgress}/{runLenght}";
+               $"Run Progress:  {runProgress}/{runLenght}\n" + resetPaused;
     }
 
     public string GetRecordingText(List<string> recordedRoomNames, string currentRoomName)

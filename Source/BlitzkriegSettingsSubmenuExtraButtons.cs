@@ -20,6 +20,7 @@ public class BlitzkriegSettingsSubmenuExtraButtons
         TextMenu.Button switchRightButton = new("Go To Next Checkpoint");
         TextMenu.Button switchLeftButton = new("Go To Previous Checkpoint");
         TextMenu.Button switchRecommendedButton = new("Go To Recommended Checkpoint");
+        TextMenu.Button pauseDeathReset = new("Pause/Resume Death Reset");
         TextMenu.Button switchCoreMode = new("Switch Core Mode");
 
         placeCheckpointButton.Pressed(() => BlitzkriegModule.placeCheckoint = true);
@@ -27,6 +28,7 @@ public class BlitzkriegSettingsSubmenuExtraButtons
         switchRightButton.Pressed(() => BlitzkriegModule.switchRight = true);
         switchLeftButton.Pressed(() => BlitzkriegModule.switchLeft = true);
         switchRecommendedButton.Pressed(() => BlitzkriegModule.switchRecommended = true);
+        pauseDeathReset.Pressed(() => BlitzkriegModule.pauseDeathReset = !BlitzkriegModule.pauseDeathReset);
         switchCoreMode.Pressed(() => BlitzkriegModule.switchCore = true);
 
         subMenu.Add(placeCheckpointButton);
@@ -34,6 +36,7 @@ public class BlitzkriegSettingsSubmenuExtraButtons
         subMenu.Add(switchRightButton);
         subMenu.Add(switchLeftButton);
         subMenu.Add(switchRecommendedButton);
+        subMenu.Add(pauseDeathReset);
         subMenu.Add(switchCoreMode);
     }
 }
