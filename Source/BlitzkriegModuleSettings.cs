@@ -41,6 +41,9 @@ public class BlitzkriegModuleSettings : EverestModuleSettings
     [SettingSubText("Forces the Death Animation to play")]
     public bool DisableInstantRespawn { get; set; } = false;
 
+    [SettingSubText("Resets Strawberries on Death and when switching between Respawnpoints. Useful for Full Clear Goldens.")]
+    public bool ResetBerries { get; set; } = true;
+
     [YamlIgnore]
     public bool StartRecordingDummy { get; set; }
 
@@ -52,6 +55,9 @@ public class BlitzkriegModuleSettings : EverestModuleSettings
 
     [SettingSubHeader("SpuckGD_Blitzkrieg_SettingsHeader_Overlay")]
     public bool EnableTextOverlay { get; set; } = true;
+
+    [SettingSubText("Hides the Text Overlay when holding the Goldenberry")]
+    public bool HideTextOverlayDuringGolden { get; set; } = false;
 
     [SettingRange(0, 10)]
     public int TextSize { get; set; } = 5;

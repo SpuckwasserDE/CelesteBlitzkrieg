@@ -42,6 +42,7 @@ public class BlitzkriegModule : EverestModule {
     private static string coreLockRoom = null;
     private static CoreModes coreLockMode = CoreModes.None;
     private static BlitzkriegTextOverlay textOverlay;
+    private static List<EntityID> collectedStrawberries = new List<EntityID>();
 
 
     public BlitzkriegModule() {
@@ -63,7 +64,8 @@ public class BlitzkriegModule : EverestModule {
         Everest.Events.Level.OnComplete += LevelOnComplete;
         Everest.Events.Player.OnSpawn += PlayerOnRespawn;
         Everest.Events.Session.OnSliderChanged += OnSliderChanged;
-        Everest.Events.Level.OnEnter += LevelOnEnter;  
+        Everest.Events.Level.OnEnter += LevelOnEnter; 
+        On.Celeste.Strawberry.OnCollect += OnStrawberryCollect;
     }
 
     private void LevelUpdate(Level level)
@@ -172,7 +174,7 @@ public class BlitzkriegModule : EverestModule {
                 }
             }
 
-            if (Settings.EnableTextOverlay && level.Session.Area == profile.blitzkriegLevel)
+            if (Settings.EnableTextOverlay && (!Settings.HideTextOverlayDuringGolden || !level.Session.GrabbedGolden) && level.Session.Area == profile.blitzkriegLevel)
             {
                 if (textOverlay == null)
                 {
@@ -209,7 +211,7 @@ public class BlitzkriegModule : EverestModule {
                     textOverlay.SetText("");
                 }            
             }
-            else if ((!Settings.EnableTextOverlay || !Settings.UseBlitzkrieg) && textOverlay != null)
+            else if ((!Settings.EnableTextOverlay || !Settings.UseBlitzkrieg || (Settings.HideTextOverlayDuringGolden && level.Session.GrabbedGolden)) && textOverlay != null)
             {
                 level.Remove(textOverlay);
                 textOverlay = null;
@@ -265,6 +267,11 @@ public class BlitzkriegModule : EverestModule {
                     {
                         delayedRespawn = true;
                     }
+
+                    if (Settings.ResetBerries)
+                    {
+                        ResetCollectedBerries(player.level);
+                    }
                 }
                 currentRunProgressIndex = 0;
             }
@@ -290,6 +297,8 @@ public class BlitzkriegModule : EverestModule {
             textOverlay.RemoveSelf();
             textOverlay = null;
         }
+
+        collectedStrawberries.Clear();
     }
 
     private void LevelOnComplete(Level level)
@@ -374,7 +383,18 @@ public class BlitzkriegModule : EverestModule {
             textOverlay.RemoveSelf();
             textOverlay = null;
         }        
-        reloadOverlay = true;             
+        reloadOverlay = true;    
+
+        if (GetProfile(session.Area) != null)
+        {
+            currentProfileIndex = SaveData.blitzkriegProfiles.IndexOf(GetProfile(session.Area));
+        }
+        else
+        {
+            currentProfileIndex = -1;
+        }    
+
+        collectedStrawberries.Clear();    
     }
 
 
@@ -472,7 +492,12 @@ public class BlitzkriegModule : EverestModule {
                 level.Session.Level = profile.roomNamesPath[index];
                 level.Session.RespawnPoint = respawnPoint;
                 Engine.Scene = new LevelLoader(player.level.Session, Vector2.Zero);                
-                level.Reload();          
+                level.Reload();
+                
+                if (Settings.ResetBerries)
+                {
+                    ResetCollectedBerries(level);
+                }
             }
         }
     }
@@ -612,7 +637,7 @@ public class BlitzkriegModule : EverestModule {
     {
         if (currentProfileIndex >= 0)
         {
-            if (Settings.UseBlitzkrieg && Settings.EnableTextOverlay && textOverlay != null && level.Session.Area == SaveData.blitzkriegProfiles[currentProfileIndex].blitzkriegLevel)
+            if (Settings.UseBlitzkrieg && Settings.EnableTextOverlay && (!Settings.HideTextOverlayDuringGolden || !level.Session.GrabbedGolden) && textOverlay != null && level.Session.Area == SaveData.blitzkriegProfiles[currentProfileIndex].blitzkriegLevel)
             {
                 //level.Remove(textOverlay);
                 textOverlay.Update(new Vector2(5, 125), "", Settings.TextSize, Dialog.Language.Font);
@@ -756,6 +781,22 @@ public class BlitzkriegModule : EverestModule {
         }
     }
 
+    private static void ResetCollectedBerries(Level level)
+    {
+        foreach (EntityID berry in collectedStrawberries)
+        {
+            level.Session.DoNotLoad.Remove(berry);
+        }
+        collectedStrawberries.Clear();
+    }
+
+    private static void OnStrawberryCollect(On.Celeste.Strawberry.orig_OnCollect orig, Strawberry self)
+    {
+        collectedStrawberries.Add(self.ID);
+        Logger.Log(LogLevel.Verbose, nameof(BlitzkriegModule), $"strawberry collected, ID is {self.ID}");
+        orig(self);
+    }
+
     public override void Unload() {
         // TODO: unapply any hooks applied in Load()
         Everest.Events.Level.OnBeforeUpdate -= LevelUpdate;
@@ -765,5 +806,6 @@ public class BlitzkriegModule : EverestModule {
         Everest.Events.Player.OnSpawn -= PlayerOnRespawn;
         Everest.Events.Session.OnSliderChanged -= OnSliderChanged;
         Everest.Events.Level.OnEnter -= LevelOnEnter;
+        On.Celeste.Strawberry.OnCollect -= OnStrawberryCollect;
     }
 }
